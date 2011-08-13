@@ -1,14 +1,34 @@
-<!--
-To change this template, choose Tools | Templates
-and open the template in the editor.
--->
 <!DOCTYPE html>
 <html>
 	<head>
-		<title></title>
+		<title>Testing lanczos via webworker</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	</head>
 	<body>
-		<div>TODO write content</div>
+		<canvas id="test_canvas" width="500" height="500"></canvas>
+
+		<script type="text/javascript">
+			function getLanczosImage()
+			{
+				worker = new Worker("lanczos.js");
+				worker.addEventListener('message', $.proxy(this, 'onMessage'), false);
+				this.LAYER = layer;
+				var size = layer.getSize();
+				worker.postMessage({
+					'imagedata': layer.getImageData(),
+					'width': size.w,
+					'height': size.h,
+					'radius': this.RADIUS
+				});
+				
+				onMessage: function(evt) {
+					if (evt.data.status == 'progress') {
+						this._setProgress(evt.data.progress);
+					} else if (evt.data.status == 'complete') {
+						this.LAYER.setImageData(evt.data.imagedata); 
+					}
+				}
+			}
+		</script>
 	</body>
 </html>
