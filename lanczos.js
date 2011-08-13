@@ -1,4 +1,4 @@
-var imageData, width, height, lobes, lanczos, ratio, range2, rcp_ratio, data, elem;
+var imageData, imageDataNew, width, height, lobes, lanczos, ratio, range2, rcp_ratio, data, elem;
 
 var cacheLanc = {};
 var center = {};
@@ -8,10 +8,10 @@ var counter = 0;
 onmessage = function(event) {
 		
 		imageData = event.data.imageData;
+		imageDataNew = event.data.imageDataNew;
 		width = event.data.width;
 		height = imageData.height * width / imageData.width;
 		lobes = event.data.lobes;
-		elem = event.data.elem;
 		
 		lanczos = lanczosCreate(lobes);
 		data = new Array(width * height * 3);
@@ -19,7 +19,7 @@ onmessage = function(event) {
 		rcp_ratio = 2 / ratio;
 		range2 = Math.ceil(ratio * lobes / 2);
 		
-		processOne(0);
+		processOne(1);
 	
 };
 
@@ -84,17 +84,18 @@ function processOne(u){
 
 function processTwo(){
 	var idx, idx2;
+	
 	for (var i = 0; i < width; i++) {
 		for (var j = 0; j < height; j++) {
 			idx = (j * width + i) * 3;
 			idx2 = (j * width + i) * 4;
-			imageData.data[idx2] = data[idx];
-			imageData.data[idx2 + 1] = data[idx + 1];
-			imageData.data[idx2 + 2] = data[idx + 2];
+			imageDataNew.data[idx2] = data[idx];
+			imageDataNew.data[idx2 + 1] = data[idx + 1];
+			imageDataNew.data[idx2 + 2] = data[idx + 2];
 		}
 	}
 	postMessage({
-		'imageData':imageData, 'height':height, 'width':width
+		'imageData':imageDataNew, 'height':height, 'width':width
 	});
 }
 

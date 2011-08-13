@@ -10,7 +10,7 @@
 		<script type="text/javascript">
 			var elemz = document.getElementById('test_canvas');
 			elemz.height=600;
-			elemz.width=600;
+			elemz.width=686;
 			elem = elemz.getContext("2d");
 			var worker = new Worker("lanczos.js");
 			img = new Image();
@@ -21,13 +21,17 @@
 				ctx = ctx.getContext("2d");
 				ctx.drawImage(img, 0, 0, img.width, img.height);
 				imageData = ctx.getImageData(0, 0, img.width, img.height);
-				worker.postMessage({'imageData':imageData, 'width':600, 'lobes': 3});
+				elem.fillStyle = "rgb(200,0,0)";
+				elem.fillRect (0, 0, 555, 550);
+				imageDataNew = elem.getImageData(0, 0, img.width, img.height);
+				worker.postMessage({'imageData':imageData, 'imageDataNew':imageDataNew, 'width':600, 'lobes': 3});
 			}
 			img.src = "image.png";
 			
 			worker.addEventListener('message', function(event) {
 				elemz.width = event.data.width;
 				elemz.height = event.data.height;
+				//alert(event.data.imageData.height);
 				elem.putImageData(event.data.imageData, 0, 0);
 			}, false);
 		</script>
