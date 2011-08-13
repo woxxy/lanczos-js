@@ -5,30 +5,31 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	</head>
 	<body>
-		<canvas id="test_canvas" width="500" height="500"></canvas>
+		<canvas id="test_canvas" width="1500" height="1500"></canvas>
 
 		<script type="text/javascript">
-			function getLanczosImage()
-			{
-				worker = new Worker("lanczos.js");
-				worker.addEventListener('message', $.proxy(this, 'onMessage'), false);
-				this.LAYER = layer;
-				var size = layer.getSize();
-				worker.postMessage({
-					'imagedata': layer.getImageData(),
-					'width': size.w,
-					'height': size.h,
-					'radius': this.RADIUS
-				});
-				
-				onMessage: function(evt) {
-					if (evt.data.status == 'progress') {
-						this._setProgress(evt.data.progress);
-					} else if (evt.data.status == 'complete') {
-						this.LAYER.setImageData(evt.data.imagedata); 
-					}
-				}
+			var elemz = document.getElementById('test_canvas');
+			elemz.height=600;
+			elemz.width=600;
+			elem = elemz.getContext("2d");
+			var worker = new Worker("lanczos.js");
+			img = new Image();
+			img.onload = function() {
+				var ctx = document.createElement("canvas");
+				ctx.height = img.height;
+				ctx.width = img.width;
+				ctx = ctx.getContext("2d");
+				ctx.drawImage(img, 0, 0, img.width, img.height);
+				imageData = ctx.getImageData(0, 0, img.width, img.height);
+				worker.postMessage({'imageData':imageData, 'width':600, 'lobes': 3});
 			}
+			img.src = "image.png";
+			
+			worker.addEventListener('message', function(event) {
+				elemz.width = event.data.width;
+				elemz.height = event.data.height;
+				elem.putImageData(event.data.imageData, 0, 0);
+			}, false);
 		</script>
 	</body>
 </html>
