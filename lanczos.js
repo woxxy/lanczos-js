@@ -1,27 +1,34 @@
-var imageData, imageDataNew, width, height, lobes, lanczos, ratio, range2, rcp_ratio, data, elem;
-
-var cacheLanc = {};
-var center = {};
-var icenter = {};
-var counter = 0;
+var data, srcdata, width, height, srcheight, srcwidth;
 
 onmessage = function(event) {
+	//imageDataNew = event.data.imageDataNew;
 		
-		imageData = event.data.imageData;
-		imageDataNew = event.data.imageDataNew;
-		width = event.data.width;
-		height = imageData.height * width / imageData.width;
-		lobes = event.data.lobes;
-		
-		lanczos = lanczosCreate(lobes);
-		data = new Array(width * height * 3);
-		ratio = imageData.width / width;
-		rcp_ratio = 2 / ratio;
-		range2 = Math.ceil(ratio * lobes / 2);
-		
-		processOne(1);
+	//this.img = img;
+	this.src = event.data.imageData;
+	/*this.dest = {
+		width: event.data.width,
+		height: Math.round(event.data.imageData.height * event.data.width / event.data.imageData.width)
+	};
+	this.dest.data = new Array(this.dest.width * this.dest.height * 3); */
+	this.dest = event.data.imageDataNew
+	this.lanczos = lanczosCreate(event.data.lobes);
+	this.ratio = event.data.imageData.width / event.data.width;
+	this.rcp_ratio = 2 / this.ratio;
+	this.range2 = Math.ceil(this.ratio * event.data.lobes / 2);
+	this.cacheLanc = {};
+	this.center = {};
+	this.icenter = {};
+
+	data = self.dest.data;
+	width = self.dest.width;
+	height = Math.round(event.data.imageData.height * self.dest.width / event.data.imageData.width);
+	srcdata = self.src.data;
+	srcheight = event.data.imageData.height;
+	srcwidth = event.data.imageData.width;
+	srcdata = self.src.data;
+	processOne(this, 0);
 	
-};
+}
 
 
 //returns a function that calculates lanczos weight
@@ -38,65 +45,50 @@ function lanczosCreate(lobes){
 }
 
 
-
-function processOne(u){
-	center.x = (u + 0.5) * ratio;
-	icenter.x = Math.floor(center.x);
+function processOne(self, u){
+	self.center.x = (u + 0.5) * self.ratio;
+	self.icenter.x = Math.floor(self.center.x);
 	for (var v = 0; v < height; v++) {
-		center.y = (v + 0.5) * ratio;
-		icenter.y = Math.floor(center.y);
+		self.center.y = (v + 0.5) * self.ratio;
+		self.icenter.y = Math.floor(self.center.y);
 		var a, r, g, b;
 		a = r = g = b = 0;
-		for (var i = icenter.x - range2; i <= icenter.x + range2; i++) {
-			if (i < 0 || i >= imageData.width) 
+		for (var i = self.icenter.x - self.range2; i <= self.icenter.x + self.range2; i++) {
+			if (i < 0 || i >= srcwidth) 
 				continue;
-			var f_x = Math.floor(1000 * Math.abs(i - center.x));
-			if (!cacheLanc[f_x]) 
-				cacheLanc[f_x] = {};
-			for (var j = icenter.y - range2; j <= icenter.y + range2; j++) {
-				if (j < 0 || j >= imageData.height) 
+			var f_x = Math.floor(1000 * Math.abs(i - self.center.x));
+			if (!self.cacheLanc[f_x]) 
+				self.cacheLanc[f_x] = {};
+			for (var j = self.icenter.y - self.range2; j <= self.icenter.y + self.range2; j++) {
+				if (j < 0 || j >= srcheight) 
 					continue;
-				var f_y = Math.floor(1000 * Math.abs(j - center.y));
-				if (cacheLanc[f_x][f_y] == undefined) 
-					cacheLanc[f_x][f_y] = lanczos(Math.sqrt(Math.pow(f_x * rcp_ratio, 2) + Math.pow(f_y * rcp_ratio, 2)) / 1000);
-				weightr = cacheLanc[f_x][f_y];
-				if (weightr > 0) {
-					var idx = (j * imageData.width + i) * 4;
-					a += weightr;
-					r += weightr * imageData.data[idx];
-					g += weightr * imageData.data[idx + 1];
-					b += weightr * imageData.data[idx + 2];
+				var f_y = Math.floor(1000 * Math.abs(j - self.center.y));
+				if (self.cacheLanc[f_x][f_y] == undefined) 
+					self.cacheLanc[f_x][f_y] = self.lanczos(Math.sqrt(Math.pow(f_x * self.rcp_ratio, 2) + Math.pow(f_y * self.rcp_ratio, 2)) / 1000);
+				weight = self.cacheLanc[f_x][f_y];
+				if (weight > 0) {
+					var idx = (j * srcwidth + i) * 4;
+					a += weight;
+					r += weight * srcdata[idx];
+					g += weight * srcdata[idx + 1];
+					b += weight * srcdata[idx + 2];
 				}
 			}
 		}
-		var idx = (v * width + u) * 3;
-		data[idx] = r / a;
-		data[idx + 1] = g / a;
-		data[idx + 2] = b / a;
+		var idx = (v * width + u) * 4;
+		data[idx] = r /a;
+		data[idx + 1] = g/a;
+		data[idx + 2] = b/a;
+		data[idx + 4] = a;
+		
 	}
 
 	if (++u < width) 
-		setTimeout(processOne, 0, u);
-	else
-		setTimeout(processTwo, 0);
-};
-
-
-function processTwo(){
-	var idx, idx2;
-	
-	for (var i = 0; i < width; i++) {
-		for (var j = 0; j < height; j++) {
-			idx = (j * width + i) * 3;
-			idx2 = (j * width + i) * 4;
-			imageDataNew.data[idx2] = data[idx];
-			imageDataNew.data[idx2 + 1] = data[idx + 1];
-			imageDataNew.data[idx2 + 2] = data[idx + 2];
-		}
+		processOne(self, u);
+	else {
+		self.dest.data = data;
+		postMessage({
+			'imageData':self.dest
+		});
 	}
-	postMessage({
-		'imageData':imageDataNew, 'height':height, 'width':width
-	});
 }
-
-

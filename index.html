@@ -5,12 +5,10 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	</head>
 	<body>
-		<canvas id="test_canvas" width="1500" height="1500"></canvas>
+		<canvas id="test_canvas" width="600" height="1500"></canvas>
 
 		<script type="text/javascript">
 			var elemz = document.getElementById('test_canvas');
-			elemz.height=600;
-			elemz.width=686;
 			elem = elemz.getContext("2d");
 			var worker = new Worker("lanczos.js");
 			img = new Image();
@@ -21,17 +19,15 @@
 				ctx = ctx.getContext("2d");
 				ctx.drawImage(img, 0, 0, img.width, img.height);
 				imageData = ctx.getImageData(0, 0, img.width, img.height);
-				elem.fillStyle = "rgb(200,0,0)";
-				elem.fillRect (0, 0, 555, 550);
-				imageDataNew = elem.getImageData(0, 0, img.width, img.height);
-				worker.postMessage({'imageData':imageData, 'imageDataNew':imageDataNew, 'width':600, 'lobes': 3});
+				
+				elem.fillStyle = "rgb(245,245,245)";
+				elem.fillRect (0, 0, 1500, 1500);
+				imageDataNew = elem.getImageData(0, 0, 1500, 1500);
+				worker.postMessage({'imageData':imageData, 'imageDataNew':imageDataNew, 'width':600, 'lobes': 5});
 			}
-			img.src = "image.png";
+			img.src = "image2.jpg";
 			
 			worker.addEventListener('message', function(event) {
-				elemz.width = event.data.width;
-				elemz.height = event.data.height;
-				//alert(event.data.imageData.height);
 				elem.putImageData(event.data.imageData, 0, 0);
 			}, false);
 		</script>
